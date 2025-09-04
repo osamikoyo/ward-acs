@@ -1,6 +1,11 @@
 package config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"fmt"
+	"os"
+
+	"github.com/kelseyhightower/envconfig"
+)
 
 type Config struct {
 	Addr           string `envconfig:"ADDR" default:"localhost:50051"`
@@ -13,9 +18,19 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	cfg := Config{}
 
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
 	}
+
+	cfg.DSN = dsn
 
 	return &cfg, nil
 }
