@@ -15,3 +15,13 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+func NewUser(token string, grandUID uuid.UUID) *User {
+	return &User{
+		UID:       uuid.New(),
+		Token:     token,
+		GrandUID:  grandUID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
