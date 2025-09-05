@@ -53,9 +53,41 @@ func (r *Repository) UpdateGrand(ctx context.Context, uid uuid.UUID, field strin
 }
 
 func (r *Repository) GetGrandByUUID(ctx context.Context, uid uuid.UUID) (*grand.Grand, error) {
-	grand := grand.Grand{}
+	fethedgrand := grand.Grand{}
 
-	res := r.db.WithContext(ctx).Model(&grand.Grand{}).Where("uid = ?").First(&grand)
+	res := r.db.WithContext(ctx).Model(&grand.Grand{}).Where("uid = ?").First(&fethedgrand)
 	if err := res.Error; err != nil {
+		r.logger.Error("failed fetch grand by uuid",
+			zap.String("uuid", uid.String()),
+			zap.Error(err))
+
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, ErrAlreadyExist
+		}
+
+		return nil, ErrUnknown
 	}
+
+	r.logger.Info("successfully fetched grand",
+		zap.String("uid", uid.String()))
+
+	return &fethedgrand, nil
+}
+
+func (r *Repository) DeleteGrand(ctx context.Context, uid uuid.UUID) error {
+	if err := r.db.Where("uid = ?", uid).Delete(&grand.Grand{}).Error; err != nil {
+		r.logger.Error("faile delete grand",
+			zap.String("uid", uid.String()),
+			zap.Error(err))
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+
+		return ErrUnknown
+	}
+
+	r.logger.Error("grand deleted successfully", zap.String("uid", uid.String()))
+
+	return nil
 }
