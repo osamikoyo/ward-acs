@@ -12,6 +12,7 @@ type Config struct {
 	RouteUserRole  string `envconfig:"ROUTE_USER_ROLE" default:"admin"`
 	RouteGrandRole string `envconfig:"ROUTE_GRAND_ROLE" default:"admin"`
 	RouteDataRole  string `envconfig:"ROUTE_DATA_ROLE" default:"admin"`
+	DataChiferKey  string `envconfig:"DATA_CHIFER_KEY" default:"secret"`
 	DSN            string
 }
 
