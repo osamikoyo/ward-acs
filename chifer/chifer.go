@@ -28,7 +28,7 @@ func AESEncrypt(text string, key []byte) (string, error) {
 
 	msg := []byte(text)
 	padding := aes.BlockSize - len(msg)%aes.BlockSize
-	padText := append(msg, byte(padding)*padding)
+	padText := append(msg, bytes.Repeat([]byte{byte(padding)}, padding)...)
 
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
@@ -42,7 +42,6 @@ func AESEncrypt(text string, key []byte) (string, error) {
 	final := append(iv, ciphertext...)
 	return base64.StdEncoding.EncodeToString(final), nil
 }
-
 func AESDecrypt(encrypted string, key []byte) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
