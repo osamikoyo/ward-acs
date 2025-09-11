@@ -32,6 +32,22 @@ func (r *Repository) CreateUser(ctx context.Context, usr *user.User) error {
 	return nil
 }
 
+func (r *Repository) ListUsers(ctx context.Context) ([]user.User, error) {
+
+	users := []user.User{}
+
+	res := r.db.WithContext(ctx).Find(&users)
+	if err := res.Error; err != nil {
+		r.logger.Error("failed list users", zap.Error(err))
+
+		return nil, ErrUnknown
+	}
+
+	r.logger.Info("users listed successfully")
+
+	return users, nil
+}
+
 func (r *Repository) ReadUsers(ctx context.Context, filter map[string]interface{}) ([]user.User, error) {
 	users := []user.User{}
 
