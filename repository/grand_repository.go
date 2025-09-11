@@ -91,3 +91,18 @@ func (r *Repository) DeleteGrand(ctx context.Context, uid uuid.UUID) error {
 
 	return nil
 }
+
+func (r *Repository) ListGrands(ctx context.Context) ([]grand.Grand, error) {
+	grands := []grand.Grand{}
+
+	res := r.db.WithContext(ctx).Find(&grands)
+	if err := res.Error; err != nil {
+		r.logger.Error("failed list grands", zap.Error(err))
+
+		return nil, ErrUnknown
+	}
+
+	r.logger.Info("grands successfully listed")
+
+	return grands, nil
+}
