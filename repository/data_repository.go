@@ -74,6 +74,10 @@ func (r *Repository) UpdateData(ctx context.Context, uid uuid.UUID, field string
 	return nil
 }
 
+func (r *Repository) ListData(ctx context.Context, grandUID uuid.UUID) ([]data.Data, error) {
+
+}
+
 func (r *Repository) DeleteData(ctx context.Context, uid uuid.UUID) error {
 	res := r.db.WithContext(ctx).Where("uid = ?", uid).Delete(&data.Data{})
 	if res.RowsAffected == 0 {
