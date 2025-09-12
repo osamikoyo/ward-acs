@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	Addr           string `envconfig:"ADDR" default:"localhost:50051"`
-	RouteUserRole  string `envconfig:"ROUTE_USER_ROLE" default:"admin"`
-	RouteGrandRole string `envconfig:"ROUTE_GRAND_ROLE" default:"admin"`
-	RouteDataRole  string `envconfig:"ROUTE_DATA_ROLE" default:"admin"`
-	DataChiferKey  string `envconfig:"DATA_CHIFER_KEY" default:"secret"`
-	DSN            string
+	Addr            string `envconfig:"ADDR" default:"localhost:50051"`
+	RouteUserRole   string `envconfig:"ROUTE_USER_ROLE" default:"admin"`
+	RouteGrandRole  string `envconfig:"ROUTE_GRAND_ROLE" default:"admin"`
+	RouteDataRole   string `envconfig:"ROUTE_DATA_ROLE" default:"admin"`
+	DataChiferKey   string `envconfig:"DATA_CHIFER_KEY" default:"secret"`
+	ElasticSearhUrl string `encconfig:"ELASTICSEARCH_URL" default:"http://localhost:9200"`
+	DSN             string
 }
 
 func NewConfig() (*Config, error) {
