@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/osamikoyo/ward/entity/data"
+	"github.com/osamikoyo/ward/entity/grand"
 	"github.com/osamikoyo/ward/entity/user"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -74,8 +75,22 @@ func (r *Repository) UpdateData(ctx context.Context, uid uuid.UUID, field string
 	return nil
 }
 
-func (r *Repository) ListData(ctx context.Context, grandUID uuid.UUID) ([]data.Data, error) {
+func (r *Repository) ListData(ctx context.Context, level int) ([]data.Data, error) {
+	datast := []data.Data{}
 
+	res := r.db.WithContext(ctx).Where("grand.level <= level").Find(&datast)
+
+	if err := res.Error; err != nil {
+		r.logger.Error("failed list data",
+			zap.Int("level", level),
+			zap.Error(err))
+
+		return nil, ErrUnknown
+	}
+
+	r.logger.Info("data listed successfully", zap.Int("level", level))
+
+	return datast, nil
 }
 
 func (r *Repository) DeleteData(ctx context.Context, uid uuid.UUID) error {
