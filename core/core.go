@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/osamikoyo/ward/casher"
 	"github.com/osamikoyo/ward/chifer"
 	"github.com/osamikoyo/ward/config"
 	"github.com/osamikoyo/ward/entity/data"
@@ -16,6 +17,7 @@ import (
 	"github.com/osamikoyo/ward/entity/user"
 	"github.com/osamikoyo/ward/logger"
 	"github.com/osamikoyo/ward/repository"
+	"github.com/osamikoyo/ward/searchbase"
 )
 
 var (
@@ -29,18 +31,30 @@ const TokenLength = 40
 type WardCore struct {
 	repository *repository.Repository
 	logger     *logger.Logger
+	casher     *casher.Casher
+	searchBase *searchbase.SearchBase
 
 	timeout time.Duration
 	key     []byte
 	cfg     *config.Config
 }
 
-func NewWardCore(repository *repository.Repository, logger *logger.Logger, cfg *config.Config, key []byte, timeout time.Duration) *WardCore {
+func NewWardCore(
+	repository *repository.Repository,
+	casher *casher.Casher,
+	searchbase *searchbase.SearchBase,
+	logger *logger.Logger,
+	cfg *config.Config,
+	key []byte,
+	timeout time.Duration,
+) *WardCore {
 	return &WardCore{
 		repository: repository,
 		logger:     logger,
 		timeout:    timeout,
 		cfg:        cfg,
+		searchBase: searchbase,
+		casher:     casher,
 		key:        key,
 	}
 }
