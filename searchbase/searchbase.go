@@ -3,6 +3,8 @@ package searchbase
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/google/uuid"
@@ -45,6 +47,62 @@ func (s *SearchBase) AddToSearchBase(ctx context.Context, index string, jsonReq 
 	s.logger.Info("value was successfully added to search base")
 
 	return nil
+}
+
+func (s *SearchBase) Search(ctx context.Context, index string, keywords []string) ([]byte, error) {
+	keywordsInMap := make([]map[string]interface{}, len(keywords))
+	for i, key := range keywords {
+		keywordsInMap[i] = map[string]interface{}{
+			"content": key,
+		}
+	}
+
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": keywordsInMap,
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		s.logger.Error("failed encode query",
+			zap.Any("query", query),
+			zap.Error(err))
+
+		return nil, err
+	}
+
+	res, err := s.client.Search(
+		s.client.Search.WithContext(ctx),
+		s.client.Search.WithIndex(index),
+		s.client.Search.WithBody(&buf),
+		s.client.Search.WithPretty(),
+	)
+	if err != nil {
+		s.logger.Error("failed send search query",
+			zap.Any("query", query),
+			zap.Error(err))
+
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	if res.IsError() {
+		s.logger.Warn("result is error",
+			zap.String("res", res.String()))
+	}
+
+	result, err := io.ReadAll(res.Body)
+	if err != nil {
+		s.logger.Error("failed read response body",
+			zap.Error(err))
+	}
+
+	return result, nil
 }
 
 func (s *SearchBase) DeleteFromSearchBase(ctx context.Context, index string, id uuid.UUID) error {
