@@ -40,3 +40,33 @@ func (c *Casher) AddToCash(ctx context.Context, key string, value string) error 
 
 	return nil
 }
+
+func (c *Casher) GetFromCash(ctx context.Context, key string) (string, error) {
+	value, err := c.client.Get(ctx, key).Result()
+	if err != nil {
+		c.logger.Error("failed fetch from cash",
+			zap.String("key", key),
+			zap.Error(err))
+
+		return "", err
+	}
+
+	c.logger.Info("value was successfully fetched", zap.String("key", key))
+
+	return value, nil
+}
+
+func (c *Casher) DeleteFromCash(ctx context.Context, key string) error {
+	_, err := c.client.Del(ctx, key).Result()
+	if err != nil {
+		c.logger.Error("failed delete from cash",
+			zap.String("key", key),
+			zap.Error(err))
+
+		return err
+	}
+
+	c.logger.Info("value was successfully deleted from cash", zap.String("key", key))
+
+	return nil
+}
