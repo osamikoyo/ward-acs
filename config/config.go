@@ -14,6 +14,7 @@ type Config struct {
 	RouteDataRole   string `envconfig:"ROUTE_DATA_ROLE" default:"admin"`
 	DataChiferKey   string `envconfig:"DATA_CHIFER_KEY" default:"secret"`
 	ElasticSearhUrl string `encconfig:"ELASTICSEARCH_URL" default:"http://localhost:9200"`
+	DataIndexName   string `envconfig:"DATA_INDEX_NAME" default:"data"`
 	DSN             string
 }
 
