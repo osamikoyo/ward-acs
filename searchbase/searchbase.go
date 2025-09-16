@@ -53,7 +53,7 @@ func (s *SearchBase) Search(ctx context.Context, index string, keywords []string
 	keywordsInMap := make([]map[string]interface{}, len(keywords))
 	for i, key := range keywords {
 		keywordsInMap[i] = map[string]interface{}{
-			"content": key,
+			"payload": key,
 		}
 	}
 
