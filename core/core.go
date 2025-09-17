@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -17,12 +18,16 @@ import (
 	"github.com/osamikoyo/ward/entity/user"
 	"github.com/osamikoyo/ward/logger"
 	"github.com/osamikoyo/ward/repository"
+	"github.com/osamikoyo/ward/retrier"
 	"github.com/osamikoyo/ward/searchbase"
 )
+
+const RetrierCount = 5
 
 var (
 	ErrPermissionDenied = errors.New("permission denied")
 	ErrEncrypt          = errors.New("failed encrypt")
+	ErrInternal         = errors.New("internal error")
 	ErrDecrypt          = errors.New("failed decrypt")
 )
 
@@ -126,7 +131,24 @@ func (w *WardCore) CreateData(token string, payload string, doEnc bool, grandUID
 
 	data := data.NewData(grandUID, payload, doEnc)
 
-	return w.repository.CreateData(ctx, data)
+	if err := retrier.DoTry(RetrierCount, func() error {
+		return w.repository.CreateData(ctx, data)
+	}); err != nil {
+		return err
+	}
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		return errors.New("failed marshal data")
+	}
+
+	if err = retrier.DoTry(RetrierCount, func() error {
+		return w.searchBase.AddToSearchBase(ctx, w.cfg.DataIndexName, body)
+	}); err != nil {
+		return err
+	}
+
+	return w.casher.AddToCash(ctx, data.UID.String(), string(body))
 }
 
 func (w *WardCore) ChangeUserGrand(token string, userUID uuid.UUID, grandUID uuid.UUID) error {
@@ -263,4 +285,31 @@ func (w *WardCore) ChangeGrandLevel(token string, grandUID uuid.UUID, level int)
 	}
 
 	return w.repository.UpdateGrand(ctx, grandUID, "level", level)
+}
+
+func (w *WardCore) SearchData(token string, keywords []string) ([]data.Data, error) {
+	ctx, cancel := w.context()
+	defer cancel()
+
+	user, err := w.repository.GetUserByToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Grand.Name != w.cfg.RouteGrandRole {
+		return nil, ErrPermissionDenied
+	}
+
+	body, err := w.searchBase.Search(ctx, w.cfg.DataIndexName, keywords)
+	if err != nil {
+		return nil, err
+	}
+
+	data := []data.Data{}
+
+	if err = json.Unmarshal(body, &data); err != nil {
+		return nil, ErrInternal
+	}
+
+	return data, nil
 }
