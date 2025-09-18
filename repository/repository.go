@@ -11,7 +11,7 @@ var (
 	ErrNotFound     = errors.New("not found")
 	ErrAlreadyExist = errors.New("already exist")
 	ErrUnknown      = errors.New("repository error")
-	ErrNilInput = errors.New("nil input")
+	ErrNilInput     = errors.New("nil input")
 )
 
 type Repository struct {
