@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/osamikoyo/ward/entity/data"
-	"github.com/osamikoyo/ward/entity/grand"
 	"github.com/osamikoyo/ward/entity/user"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
