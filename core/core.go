@@ -109,6 +109,22 @@ func (w *WardCore) RegisterUser(token string, grandUID uuid.UUID) (string, error
 	return tokenOut, nil
 }
 
+func (w *WardCore) DeleteUser(token string, userUID uuid.UUID) error {
+	ctx, cancel := w.context()
+	defer cancel()
+
+	user, err := w.repository.GetUserByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	if user.Grand.Name != w.cfg.RouteUserRole {
+		return ErrPermissionDenied
+	}
+
+	return w.repository.DeleteUser(ctx, userUID)
+}
+
 func (w *WardCore) CreateData(token string, payload string, doEnc bool, grandUID uuid.UUID) error {
 	ctx, cancel := w.context()
 	defer cancel()
@@ -234,7 +250,17 @@ func (w *WardCore) DeleteData(token string, dataUID uuid.UUID) error {
 		return ErrPermissionDenied
 	}
 
-	return w.repository.DeleteData(ctx, dataUID)
+	if err = w.casher.DeleteFromCash(ctx, dataUID.String()); err != nil {
+		return err
+	}
+
+	if err = w.searchBase.DeleteFromSearchBase(ctx, w.cfg.DataIndexName, dataUID); err != nil {
+		return err
+	}
+	if err = w.repository.DeleteData(ctx, dataUID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (w *WardCore) CreateGrand(token, name string, level int) error {
@@ -305,11 +331,18 @@ func (w *WardCore) SearchData(token string, keywords []string) ([]data.Data, err
 		return nil, err
 	}
 
-	data := []data.Data{}
+	datas := []data.Data{}
 
-	if err = json.Unmarshal(body, &data); err != nil {
+	if err = json.Unmarshal(body, &datas); err != nil {
 		return nil, ErrInternal
 	}
 
-	return data, nil
+	resdata := make([]data.Data, len(datas))
+	for i, data := range datas {
+		if data.Grand.Level <= user.Grand.Level {
+			resdata[i] = data
+		}
+	}
+
+	return resdata, nil
 }
