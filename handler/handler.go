@@ -16,4 +16,7 @@ func (h *Handler) RegisterRouters(e *echo.Echo) {
 	user := e.Group("/user")
 	user.POST("/register", h.RegisterUserHandler)
 
+	grand := e.Group("/grand")
+	grand.POST("/create/:token", h.CreateGrandHandler)
+	grand.DELETE("/delete/:token/uid/:uid", h.DeleteGrandHandler)
 }
