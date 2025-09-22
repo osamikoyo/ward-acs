@@ -10,16 +10,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/osamikoyo/ward/casher"
 	"github.com/osamikoyo/ward/chifer"
 	"github.com/osamikoyo/ward/config"
 	"github.com/osamikoyo/ward/entity/data"
 	"github.com/osamikoyo/ward/entity/grand"
 	"github.com/osamikoyo/ward/entity/user"
 	"github.com/osamikoyo/ward/logger"
-	"github.com/osamikoyo/ward/repository"
 	"github.com/osamikoyo/ward/retrier"
-	"github.com/osamikoyo/ward/searchbase"
 )
 
 const RetrierCount = 5
@@ -34,10 +31,9 @@ var (
 const TokenLength = 40
 
 type WardCore struct {
-	repository *repository.Repository
+	repository Repository
 	logger     *logger.Logger
-	casher     *casher.Casher
-	searchBase *searchbase.SearchBase
+	searchBase SearchBase
 
 	timeout time.Duration
 	key     []byte
@@ -45,9 +41,8 @@ type WardCore struct {
 }
 
 func NewWardCore(
-	repository *repository.Repository,
-	casher *casher.Casher,
-	searchbase *searchbase.SearchBase,
+	repository Repository,
+	searchbase SearchBase,
 	logger *logger.Logger,
 	cfg *config.Config,
 	key []byte,
@@ -59,7 +54,6 @@ func NewWardCore(
 		timeout:    timeout,
 		cfg:        cfg,
 		searchBase: searchbase,
-		casher:     casher,
 		key:        key,
 	}
 }
@@ -102,7 +96,9 @@ func (w *WardCore) RegisterUser(token string, grandUID uuid.UUID) (string, error
 
 	user := user.NewUser(usrToken, grandUID)
 
-	if err := w.repository.CreateUser(ctx, user); err != nil {
+	if err := retrier.DoTry(RetrierCount, func() error {
+		return w.repository.CreateUser(ctx, user)
+	}); err != nil {
 		return "", err
 	}
 
@@ -122,7 +118,9 @@ func (w *WardCore) DeleteUser(token string, userUID uuid.UUID) error {
 		return ErrPermissionDenied
 	}
 
-	return w.repository.DeleteUser(ctx, userUID)
+	return retrier.DoTry(RetrierCount, func() error {
+		return w.repository.DeleteUser(ctx, userUID)
+	})
 }
 
 func (w *WardCore) CreateData(token string, payload string, doEnc bool, grandUID uuid.UUID) error {
@@ -164,7 +162,7 @@ func (w *WardCore) CreateData(token string, payload string, doEnc bool, grandUID
 		return err
 	}
 
-	return w.casher.AddToCash(ctx, data.UID.String(), string(body))
+	return nil
 }
 
 func (w *WardCore) ChangeUserGrand(token string, userUID uuid.UUID, grandUID uuid.UUID) error {
@@ -248,10 +246,6 @@ func (w *WardCore) DeleteData(token string, dataUID uuid.UUID) error {
 
 	if user.Grand.Name != w.cfg.RouteDataRole {
 		return ErrPermissionDenied
-	}
-
-	if err = w.casher.DeleteFromCash(ctx, dataUID.String()); err != nil {
-		return err
 	}
 
 	if err = w.searchBase.DeleteFromSearchBase(ctx, w.cfg.DataIndexName, dataUID); err != nil {
@@ -345,4 +339,43 @@ func (w *WardCore) SearchData(token string, keywords []string) ([]data.Data, err
 	}
 
 	return resdata, nil
+}
+
+func (w *WardCore) ListData(token string) ([]data.Data, error) {
+	ctx, cancel := w.context()
+	defer cancel()
+
+	user, err := w.repository.GetUserByToken(ctx, token)
+	if err != nil {
+		return nil, ErrPermissionDenied
+	}
+
+	data, err := w.repository.ListData(ctx, user.Grand.Level)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (w *WardCore) ListGrand(token string) ([]grand.Grand, error) {
+
+	ctx, cancel := w.context()
+	defer cancel()
+
+	user, err := w.repository.GetUserByToken(ctx, token)
+	if err != nil {
+		return nil, ErrPermissionDenied
+	}
+
+	if user.Grand.Name != w.cfg.RouteGrandRole {
+		return nil, ErrPermissionDenied
+	}
+
+	grands, err := w.repository.ListGrands(ctx)
+	if err != nil {
+		return nil, ErrInternal
+	}
+
+	return grands, nil
 }
