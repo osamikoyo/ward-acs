@@ -12,6 +12,12 @@ type Handler struct {
 	core *core.WardCore
 }
 
+func NewHandler(core *core.WardCore) *Handler {
+	return &Handler{
+		core: core,
+	}
+}
+
 func (h *Handler) RegisterRouters(e *echo.Echo) {
 	e.Use(middleware.Logger())
 	e.Use(tokenmw.TokenMiddleware)
@@ -22,8 +28,9 @@ func (h *Handler) RegisterRouters(e *echo.Echo) {
 
 	grand := e.Group("/grand")
 	grand.POST("/create", h.CreateGrandHandler)
-	grand.DELETE("/delete//uid/:uid", h.DeleteGrandHandler)
-	grand.PATCH("/change/level/uid/:uid", h.ChangeGrandLevelHandler)
+	grand.DELETE("/delete/:uid", h.DeleteGrandHandler)
+	grand.PATCH("/change/level/:uid", h.ChangeGrandLevelHandler)
+	grand.GET("/list", h.ListGrandHandler)
 
 	data := e.Group("/data")
 	data.POST("/create", h.CreateDataHandler)
