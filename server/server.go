@@ -21,7 +21,7 @@ type (
 	}
 )
 
-func (s *Server) NewServer(echo *echo.Echo, cfg *config.Config, logger *logger.Logger) *Server {
+func NewServer(echo *echo.Echo, cfg *config.Config, logger *logger.Logger) *Server {
 	return &Server{
 		server: echo,
 		cfg:    cfg,
