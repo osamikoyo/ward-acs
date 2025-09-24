@@ -120,7 +120,7 @@ func (r *Repository) UpdateUser(ctx context.Context, uid uuid.UUID, field string
 	return nil
 }
 
-func (r *Repository) DeleteUser(ctx context.Context, uid *uuid.UUID) error {
+func (r *Repository) DeleteUser(ctx context.Context, uid uuid.UUID) error {
 	res := r.db.Where("uid = ?", uid).Delete(&user.User{})
 	if err := res.Error; err != nil {
 		r.logger.Error("failed delete user ",
