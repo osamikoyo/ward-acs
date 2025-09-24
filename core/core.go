@@ -45,7 +45,6 @@ func NewWardCore(
 	searchbase SearchBase,
 	logger *logger.Logger,
 	cfg *config.Config,
-	key []byte,
 	timeout time.Duration,
 ) *WardCore {
 	return &WardCore{
@@ -54,7 +53,6 @@ func NewWardCore(
 		timeout:    timeout,
 		cfg:        cfg,
 		searchBase: searchbase,
-		key:        key,
 	}
 }
 
@@ -200,7 +198,7 @@ func (w *WardCore) GetData(token string, dataUID uuid.UUID) (*data.Data, error) 
 	}
 
 	if data.Encrypted {
-		payload, err := chifer.AESDecrypt(data.Payload, w.key)
+		payload, err := chifer.AESDecrypt(data.Payload, []byte(w.cfg.DataChiferKey))
 		if err != nil {
 			return nil, ErrDecrypt
 		}
