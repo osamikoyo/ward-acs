@@ -13,7 +13,6 @@ type Config struct {
 	RouteGrandRole  string `envconfig:"ROUTE_GRAND_ROLE" default:"admin"`
 	RouteDataRole   string `envconfig:"ROUTE_DATA_ROLE" default:"admin"`
 	DataChiferKey   string `envconfig:"DATA_CHIFER_KEY" default:"secret"`
-	RedisUrl        string `encconfig:"REDIS_URL" default:"localhost:9000"`
 	ElasticSearhUrl string `encconfig:"ELASTICSEARCH_URL" default:"http://localhost:9200"`
 	DataIndexName   string `envconfig:"DATA_INDEX_NAME" default:"data"`
 	DSN             string
