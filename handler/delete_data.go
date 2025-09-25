@@ -8,7 +8,10 @@ import (
 )
 
 func (h *Handler) DeleteDataHandler(c echo.Context) error {
-	token := c.Param("token")
+	token, ok := c.Get("token").(string)
+	if !ok {
+		return c.String(http.StatusBadGateway, "invalid token")
+	}
 
 	uid := c.Param("uid")
 
