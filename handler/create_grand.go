@@ -7,7 +7,10 @@ import (
 )
 
 func (h *Handler) CreateGrandHandler(c echo.Context) error {
-	token := c.Param("token")
+	token, ok := c.Get("token").(string)
+	if !ok {
+		return c.String(http.StatusBadGateway, "invalid token")
+	}
 
 	grand := struct {
 		Level int    `json:"level"`
