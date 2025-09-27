@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      - ADDR=:50051
+      - ROUTE_USER_ROLE=admin
+      - ROUTE_GRAND_ROLE=admin
+      - ROUTE_DATA_ROLE=admin
+      - DATA_CHIFER_KEY=secret
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - DATA_INDEX_NAME=data
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=appdb
+    depends_on:
+      - postgres
+      - elasticsearch
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  elasticsearch:
+    image: elasticsearch:8.15.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+
+
+volumes:
+  postgres_data:
+  es_data:
+
+networks:
+  app-network:
+    driver: bridge
