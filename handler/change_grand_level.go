@@ -8,7 +8,10 @@ import (
 )
 
 func (h *Handler) ChangeGrandLevelHandler(c echo.Context) error {
-	token := c.Param("token")
+	token, ok := c.Get("token").(string)
+	if !ok {
+		return c.String(http.StatusBadGateway, "invalid token")
+	}
 
 	req := struct {
 		GrandUID string `json:"grand_uid"`
